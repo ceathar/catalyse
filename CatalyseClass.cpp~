@@ -1,0 +1,11 @@
+// Catalyse.cpp
+
+#include "Catalyse.h"
+
+void CatalyseClass::setup(){
+  image.loadImage("input/remi/remi_00000.jpg");
+}
+
+void CatalyseClass::draw(){
+  image.draw(100,100);
+}

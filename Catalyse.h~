@@ -1,0 +1,11 @@
+// Catalyse.h
+
+#include "ofMain.h"
+
+class Catalse {
+ public:
+  void setup();
+  void draw();
+
+  ofImage image;
+}
