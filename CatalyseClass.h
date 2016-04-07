@@ -14,29 +14,20 @@ class CatalyseClass {
   void keyPressed(int key);
   void initStateFromImage(ofPixels, bool, int);
   void initStateFromImageBetweenTwoColors(ofPixels, bool, int, int);
-  void readImage();
+
+  void readImage();// string filePath="",bool hasParam = false, int zeros=3, string main_dir="input/",string format=".jpg");
   void updateBoardClassical(); // classical rules of the game of life
   void updateBoardNew(); // new rule : live if >= 2 living neighbours
   void eraseGlider(int);
 
-  //  int threshold;
-
-  ofParameterGroup catalyseParameters;
+  //ofParameterGroup catalyseParameters;
   ofParameter<int> threshold;
   ofParameter<int> threshold_min;
   ofParameter<int> threshold_max;
   ofParameter<int> step;
   
-  ofParameter<bool> if_white;
-  ofParameter<bool> eraseBlank;
-  ofParameter<bool> double_threshold;
-  ofParameter<bool> limiting_steps;
-  ofParameter<bool> uniqueInput;
-  ofParameter<bool> newRule;
-    
-  //bool if_white, eraseBlank, double_threshold, limiting_steps, uniqueInput, newRule;
+  bool if_white, eraseBlank, double_threshold, limiting_steps, uniqueInput, newRule;
 
-  // not in use
   int livingCell_count, livingCell_minValue;
   
   bool succ;
@@ -49,6 +40,6 @@ class CatalyseClass {
   ofImage bild;
   
   string input_dir, output_dir, format, file_name, dir_name;
-  string input_file, output_file;
+  string input_file, output_file, filePath, main_dir;
 
 };

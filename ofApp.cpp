@@ -3,24 +3,106 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
   catalyse.setup();
-  parameterGroup.add(catalyse.catalyseParameters);
-  gui.setup(parameterGroup);
+
+  int x = 50;
+  int y = 50;
+  autoRefresh = false;
+
+  f1 = new ofxDatGuiFolder("SETUP");
+  f1->addTextInput("FILE","");
+  f1->addToggle("White",false);
+  f1->addToggle("Erase Blank",false);
+  f1->addToggle("Limiting Steps",false);
+  f1->addToggle("Unique Input",false);
+  f1->addToggle("New Rule",false);
+  f1->addButton("REFRESH");
+  f1->expand();
+  f1->onButtonEvent(this,&ofApp::onButtonEvent);
+  f1->onTextInputEvent(this,&ofApp::onTextInputEvent);
+
+  f2 = new ofxDatGuiFolder("Threshold");
+  f2->addSlider("THRESHOLD",0,255);
+  f2->onSliderEvent(this,&ofApp::onSliderEvent);
+  f2->expand();
+
+  f3 = new ofxDatGuiFolder("ANIMATION");
+  f3->addSlider("STEPS",0,200);
+  f3->addToggle("AUTO-REFRESH",false);
+  f3->addButton("START");
+  f3->onSliderEvent(this,&ofApp::onSliderEvent);
+  f3->onButtonEvent(this,&ofApp::onButtonEvent);
+  f3->expand();
+   
+  f1->setPosition(x,y);
+  f2->setPosition(x+f1->getWidth()+40,y);
+  f3->setPosition(x+f1->getWidth()+40,y+f2->getHeight()+40);
+
+
+}
+
+void ofApp::onButtonEvent(ofxDatGuiButtonEvent e){
+  // SETUP
+  if (e.target->getLabel() == "WHITE") {
+     catalyse.if_white = !catalyse.if_white;
+  }
+  if (e.target->getLabel() == "ERASE BLANK") {
+     catalyse.eraseBlank = !catalyse.eraseBlank;
+  }
+  if (e.target->getLabel() == "UNIQUE INPUT") {
+     catalyse.uniqueInput = !catalyse.uniqueInput;
+  }
+  if (e.target->getLabel() == "LIMITING STEPS") {
+     catalyse.limiting_steps = !catalyse.limiting_steps;
+  }
+  if (e.target->getLabel() == "NEW RULE") {
+     catalyse.newRule = !catalyse.newRule;
+  }
+  if (e.target->getLabel() == "REFRESH") {
+    catalyse.readImage();
+  }
+
+  // ANIMATION
+  if (e.target->getLabel() == "START") {    
+  }
+  if (e.target->getLabel() == "AUTO-REFRESH") {
+    autoRefresh = !autoRefresh;
+  }
+}
+
+void ofApp::onSliderEvent(ofxDatGuiSliderEvent e){
+  if (e.target->getLabel() == "THRESHOLD") {
+    catalyse.threshold = int(e.value);
+  }
+  if (e.target->getLabel() == "STEPS") {
+    catalyse.step = int(e.value);
+  }
+}
+
+void ofApp::onTextInputEvent(ofxDatGuiTextInputEvent e) {
+  if (e.target->getLabel() == "FILE") {    
+    catalyse.filePath = e.text;
+    catalyse.readImage();
+  }
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    catalyse.update();
+  if (autoRefresh) {
+     catalyse.update();
+  }
+
+    f1->update();
+    f2->update();
+    f3->update();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
   catalyse.draw();
-  gui.draw();
-}
 
-void ofApp::paramChanged(){
-  catalyse.readImage();
-  catalyse.actualStep = 0;
+  f1->draw();
+  f2->draw();
+  f3->draw();
 }
 
 //--------------------------------------------------------------

@@ -1,9 +1,6 @@
 #pragma once
 
 #include "ofMain.h"
-#include "ofxDatGui.h"
-#include "CatalyseClass.h"
-
 
 class ofApp : public ofBaseApp{
 
@@ -23,15 +20,5 @@ class ofApp : public ofBaseApp{
 		void windowResized(int w, int h);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
-
-		void onSliderEvent(ofxDatGuiSliderEvent e);
-		void onTextInputEvent(ofxDatGuiTextInputEvent e);
-		void onButtonEvent(ofxDatGuiButtonEvent e);
-		  
-		ofxDatGuiFolder* f1;
-		ofxDatGuiFolder* f2;
-		ofxDatGuiFolder* f3;
-
-		bool autoRefresh;
-		CatalyseClass catalyse;
+		
 };
