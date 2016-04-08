@@ -26,7 +26,7 @@ void ofApp::setup(){
   f2->expand();
 
   f3 = new ofxDatGuiFolder("ANIMATION");
-  f3->addSlider("STEPS",0,200);
+  f3->addSlider("STEPS",0,2000);
   f3->addToggle("AUTO-REFRESH",false);
   f3->addButton("START");
   f3->onSliderEvent(this,&ofApp::onSliderEvent);

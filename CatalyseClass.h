@@ -15,7 +15,7 @@ class CatalyseClass {
   void initStateFromImage(ofPixels, bool, int);
   void initStateFromImageBetweenTwoColors(ofPixels, bool, int, int);
 
-  void readImage();// string filePath="",bool hasParam = false, int zeros=3, string main_dir="input/",string format=".jpg");
+  void readImage();
   void updateBoardClassical(); // classical rules of the game of life
   void updateBoardNew(); // new rule : live if >= 2 living neighbours
   void eraseGlider(int);
@@ -31,13 +31,14 @@ class CatalyseClass {
   int livingCell_count, livingCell_minValue;
   
   bool succ;
-  int h, w, count, nombreImages, actualImage, actualStep, living_neighbours;
-  int i, max_value, nombre_zeros;
+  int i, h, w, count, nombreImages, actualImage, actualStep, living_neighbours;
+  int max_value, nombre_zeros;
   bool * rlife_board;
   bool * new_board;
   ofPixels result_pxls, pxls;
   ofFbo result;
   ofImage bild;
+  ofImage startImage;
   
   string input_dir, output_dir, format, file_name, dir_name;
   string input_file, output_file, filePath, main_dir;

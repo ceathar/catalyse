@@ -124,9 +124,15 @@ void CatalyseClass::draw() {
 
 void CatalyseClass::readImage(){//}string filePath, bool hasParam, int zeros, string main_dir, string format) {
   if (filePath != "") {
+    format = ".png";
     succ = bild.load(main_dir+filePath+format);
+    if (!succ) {
+      filePath = ofToLower(filePath);
+      succ = bild.load(main_dir+filePath+format);
+    }
   };
   if (filePath == "" || !succ){
+    format = ".jpg";
     string string_nb_zeros = "";
     for (i = 0; i < nombre_zeros-log10(actualImage); ++i) {
       string_nb_zeros += "0";
@@ -138,7 +144,23 @@ void CatalyseClass::readImage(){//}string filePath, bool hasParam, int zeros, st
       std::exit(1);
     }
   }
+  
+  w = bild.getWidth();
+  h = bild.getHeight();
+  if ((w < ofGetWidth()/2) && (h < ofGetHeight()/2)) {
+    w = w * 2;
+    h = h * 2;
+  }
+  else if ((w > ofGetWidth()) || (h > ofGetHeight())) {
+    w = w * 0.5;
+    h = h * 0.5;
+  }
+
+  count = h * w;
   bild.resize(w,h);
+
+  result.clear();
+  result.allocate(w, h, GL_RGB);
 
   bild.getTexture().readToPixels(pxls);
 
