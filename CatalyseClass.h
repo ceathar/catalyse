@@ -18,6 +18,7 @@ class CatalyseClass {
   void readImage();
   void updateBoardClassical(); // classical rules of the game of life
   void updateBoardNew(); // new rule : live if >= 2 living neighbours
+  void switchImage();
   void eraseGlider(int);
 
   //ofParameterGroup catalyseParameters;
@@ -25,20 +26,30 @@ class CatalyseClass {
   ofParameter<int> threshold_min;
   ofParameter<int> threshold_max;
   ofParameter<int> step;
+  int channel;
   
-  bool if_white, eraseBlank, double_threshold, limiting_steps, uniqueInput, newRule;
+  bool if_white;
+  bool invert;
+  bool eraseBlank;
+  bool double_threshold;
+  bool limiting_steps;
+  bool uniqueInput;
+  bool newRule;
 
   int livingCell_count, livingCell_minValue;
   
   bool succ;
-  int i, h, w, count, nombreImages, actualImage, actualStep, living_neighbours;
-  int max_value, nombre_zeros;
+  int i, j, h, w, count, nombreImages, actualImage, actualStep, living_neighbours;
+  int posX, posY, max_value, nombre_zeros;
+  int r,g,b;
+  int numberNeighbours;
+  int* cells;
   bool * rlife_board;
   bool * new_board;
-  ofPixels result_pxls, pxls;
-  ofFbo result;
+  ofPixels result_pxls, pxls, startPxls, finalPxls;
+  ofFbo result, startFbo, finalFbo;
   ofImage bild;
-  ofImage startImage;
+  ofImage startImage, finalImage;
   
   string input_dir, output_dir, format, file_name, dir_name;
   string input_file, output_file, filePath, main_dir;

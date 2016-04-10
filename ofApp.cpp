@@ -7,10 +7,12 @@ void ofApp::setup(){
   int x = 50;
   int y = 50;
   autoRefresh = false;
-
+  vector<string> channels = {"RED","GREEN","BLUE"};
+  
   f1 = new ofxDatGuiFolder("SETUP");
   f1->addTextInput("FILE","");
-  f1->addToggle("White",false);
+  f1->addToggle("WHITE",false);
+  //  f1->addToggle("INVERT COLORS",false);
   f1->addToggle("Erase Blank",false);
   f1->addToggle("Limiting Steps",false);
   f1->addToggle("Unique Input",false);
@@ -21,8 +23,12 @@ void ofApp::setup(){
   f1->onTextInputEvent(this,&ofApp::onTextInputEvent);
 
   f2 = new ofxDatGuiFolder("Threshold");
+  f2->addSlider("CHANNELS",0,2);
   f2->addSlider("THRESHOLD",0,255);
   f2->onSliderEvent(this,&ofApp::onSliderEvent);
+  //  f2->onDropdownEvent(this,&ofApp::onDropdownEvent);
+  f2->addButton("SWITCH");
+  f2->onButtonEvent(this,&ofApp::onButtonEvent);
   f2->expand();
 
   f3 = new ofxDatGuiFolder("ANIMATION");
@@ -37,13 +43,16 @@ void ofApp::setup(){
   f2->setPosition(x+f1->getWidth()+40,y);
   f3->setPosition(x+f1->getWidth()+40,y+f2->getHeight()+40);
 
-
 }
 
 void ofApp::onButtonEvent(ofxDatGuiButtonEvent e){
   // SETUP
+  
   if (e.target->getLabel() == "WHITE") {
      catalyse.if_white = !catalyse.if_white;
+  }
+  if (e.target->getLabel() == "INVERT COLORS") {
+     catalyse.invert = !catalyse.invert;
   }
   if (e.target->getLabel() == "ERASE BLANK") {
      catalyse.eraseBlank = !catalyse.eraseBlank;
@@ -60,6 +69,11 @@ void ofApp::onButtonEvent(ofxDatGuiButtonEvent e){
   if (e.target->getLabel() == "REFRESH") {
     catalyse.readImage();
   }
+  
+  // THRESHOLD
+  if (e.target->getLabel() == "SWITCH") {
+    catalyse.switchImage();
+  }
 
   // ANIMATION
   if (e.target->getLabel() == "START") {    
@@ -73,6 +87,9 @@ void ofApp::onSliderEvent(ofxDatGuiSliderEvent e){
   if (e.target->getLabel() == "THRESHOLD") {
     catalyse.threshold = int(e.value);
   }
+  if (e.target->getLabel() == "CHANNELS") {
+    catalyse.channel = int(e.value);
+  }
   if (e.target->getLabel() == "STEPS") {
     catalyse.step = int(e.value);
   }
@@ -83,6 +100,11 @@ void ofApp::onTextInputEvent(ofxDatGuiTextInputEvent e) {
     catalyse.filePath = e.text;
     catalyse.readImage();
   }
+}
+
+void ofApp::onDropdownEvent(ofxDatGuiDropdownEvent e) {
+    cout << "RED" << endl;
+    cout << e.child << endl;
 }
 
 //--------------------------------------------------------------

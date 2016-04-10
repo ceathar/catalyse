@@ -25,9 +25,11 @@ class ofApp : public ofBaseApp{
 		void gotMessage(ofMessage msg);
 
 		void onSliderEvent(ofxDatGuiSliderEvent e);
+		void onDropdownEvent(ofxDatGuiDropdownEvent e);
 		void onTextInputEvent(ofxDatGuiTextInputEvent e);
+		void onSwitchEvent(ofxDatGuiButtonEvent e);
 		void onButtonEvent(ofxDatGuiButtonEvent e);
-		  
+  
 		ofxDatGuiFolder* f1;
 		ofxDatGuiFolder* f2;
 		ofxDatGuiFolder* f3;
