@@ -33,6 +33,7 @@ class ofApp : public ofBaseApp{
 		ofxDatGuiFolder* f1;
 		ofxDatGuiFolder* f2;
 		ofxDatGuiFolder* f3;
+		ofxDatGuiFolder* f4;
 
 		bool autoRefresh;
 		CatalyseClass catalyse;
