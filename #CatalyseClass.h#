@@ -1,5 +1,4 @@
 // CatalyseClass.h
-
 #include "ofMain.h"
 #include "lifeRules.h"
 #include "ofxCv.h"

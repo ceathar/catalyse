@@ -3,11 +3,23 @@
 //--------------------------------------------------------------
 void ofApp::setup(){
   catalyse.setup();
-
+  
   int x = 50;
   int y = 50;
-  autoRefresh = false;
+  houghThresh = 120;
   vector<string> channels = {"RED","GREEN","BLUE"};
+  
+  doFDoG = true;
+  halfw = 4;
+  smoothPasses = 2;
+  sigma1 = 1;
+  sigma2 = 5;
+  tau = 0.9;
+  black = 100;
+  doThresh = true;
+  thresh = 150;
+  doThin = true;
+  doCanny = true;
   
   f1 = new ofxDatGuiFolder("SETUP");
   f1->addToggle("WHITE",false);
@@ -23,12 +35,11 @@ void ofApp::setup(){
   f2->addSlider("CHANNELS",0,2);
   f2->addSlider("THRESHOLD",0,255);
   f2->onSliderEvent(this,&ofApp::onSliderEvent);
-    //  f2->onDropdownEvent(this,&ofApp::onDropdownEvent);
   f2->addButton("SWITCH");
   f2->onButtonEvent(this,&ofApp::onButtonEvent);
 
   f3 = new ofxDatGuiFolder("ANIMATION");
-  f3->addSlider("STEPS",0,100000);
+  f3->addSlider("STEPS",0,5000);
   f3->addToggle("AUTO-REFRESH",false);
   f3->addButton("SAVE");
   f3->addButton("START");
@@ -43,21 +54,28 @@ void ofApp::setup(){
   f4->onTextInputEvent(this,&ofApp::onTextInputEvent);
   f4->onButtonEvent(this,&ofApp::onButtonEvent);
 
+  f5 = new ofxDatGuiFolder("Canny");
+  f5->addSlider("cannyParam1",0,200);
+  f5->addSlider("cannyParam2",0,200);
+  f5->addToggle("setupCANNY",false);
+  f5->onSliderEvent(this,&ofApp::onSliderEvent);
+  f5->onButtonEvent(this,&ofApp::onButtonEvent);
+
   f1->expand();
   f2->expand();
   f3->expand();
   f4->expand();
+  f5->expand();
   
   f1->setPosition(x,y);
   f2->setPosition(x+f1->getWidth()+40,y);
   f3->setPosition(x+f1->getWidth()+f2->getWidth()+80,y);
   f4->setPosition(x+f1->getWidth()+f2->getWidth()+f3->getWidth()+120,y);
-
+  f5->setPosition(x+f1->getWidth()+f2->getWidth()+f3->getWidth()+f4->getWidth()+160,y);
 }
 
 void ofApp::onButtonEvent(ofxDatGuiButtonEvent e){
-  // SETUP
-  
+  //  SETUP
   if (e.target->getLabel() == "WHITE") {
      catalyse.if_white = !catalyse.if_white;
   }
@@ -87,7 +105,7 @@ void ofApp::onButtonEvent(ofxDatGuiButtonEvent e){
     catalyse.actualStep = 0;
   }
 
-  // ANIMATION
+  //  ANIMATION
   if (e.target->getLabel() == "START") {
     catalyse.printMultipleImages();
   }
@@ -96,7 +114,7 @@ void ofApp::onButtonEvent(ofxDatGuiButtonEvent e){
     catalyse.actualStep = 0;
   }
 
-  // THRESHOLD
+  //  THRESHOLD
   if (e.target->getLabel() == "SHOW RENDER") {
     catalyse.show_render = !catalyse.show_render;
   }
@@ -106,6 +124,12 @@ void ofApp::onButtonEvent(ofxDatGuiButtonEvent e){
   }
   else if (e.target->getLabel() == "SWITCH") {
     catalyse.switchImage();
+    catalyse.switchActivated = !catalyse.switchActivated;
+  }
+  
+  if (e.target->getLabel() == "SETUPCANNY") {
+     catalyse.setupCanny = !catalyse.setupCanny;
+     catalyse.readImage();
   }
 
   else {
@@ -117,17 +141,23 @@ void ofApp::onButtonEvent(ofxDatGuiButtonEvent e){
 void ofApp::onSliderEvent(ofxDatGuiSliderEvent e){
   if (e.target->getLabel() == "THRESHOLD") {
     catalyse.threshold = int(e.value);
-    catalyse.actualStep = 0;
+    //    catalyse.actualStep = 0;
   }
   if (e.target->getLabel() == "CHANNELS") {
     catalyse.channel = int(e.value);
-    catalyse.actualStep = 0;
+    //catalyse.actualStep = 0;
   }
   if (e.target->getLabel() == "STEPS") {
     if (catalyse.actualStep > int(e.value)) {
       catalyse.actualStep = 0;
     }
     catalyse.step = int(e.value);
+  }
+  if (e.target->getLabel() == "CANNYPARAM1") {
+    catalyse.cannyParam1 = int(e.value);
+  }
+  if (e.target->getLabel() == "CANNYPARAM2") {
+    catalyse.cannyParam2 = int(e.value);
   }
   catalyse.readImage();
 }
@@ -146,24 +176,40 @@ void ofApp::onDropdownEvent(ofxDatGuiDropdownEvent e) {
 
 //--------------------------------------------------------------
 void ofApp::update(){
-  if (autoRefresh) {
-     catalyse.update();
-  }
-
-    f1->update();
-    f2->update();
-    f3->update();
-    f4->update();
+  //  if (autoRefresh) {
+  catalyse.update();
+     //  }
+    
+  f1->update();
+  f2->update();
+  f3->update();
+  f4->update();
+  f5->update();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-  catalyse.draw();
+   catalyse.draw();
+
+  //  for(int i = 0; i < input.size(); i++) {
+  //   ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+    // input[i].draw(i * (input[i].getWidth()), 0,input[i].getWidth(),input[i].getHeight());
+    // ofEnableBlendMode(OF_BLENDMODE_ADD);
+  //   ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+  //   input[i].draw(i * (input[i].getWidth()), 256,input[i].getWidth(),input[i].getHeight());
+  //   ofEnableBlendMode(OF_BLENDMODE_ADD);
+  //   canny[0].draw(100, 256);
+  //   canny[1].draw(500, 256);
+  // }
+  
+  // ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+  // ofDrawBitmapStringHighlight("Canny edge detection", 10, 256 + 20);
 
   f1->draw();
   f2->draw();
   f3->draw();
   f4->draw();
+  f5->draw();
 }
 
 //--------------------------------------------------------------
@@ -178,7 +224,6 @@ void ofApp::keyReleased(int key){
 
 //--------------------------------------------------------------
 void ofApp::mouseMoved(int x, int y ){
-
 }
 
 //--------------------------------------------------------------
@@ -193,8 +238,6 @@ void ofApp::mousePressed(int x, int y, int button){
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button){
-  //  catalyse.readImage();
-  //  catalyse.actualStep = 0;
 }
 
 //--------------------------------------------------------------

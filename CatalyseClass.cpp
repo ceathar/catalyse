@@ -1,59 +1,155 @@
-
-
 // Catalyse.cpp
 
 #include "CatalyseClass.h"
+using namespace ofxCv;
+using namespace cv;
 
 void CatalyseClass::setup(){
-  posX = 50, posY = 500;
+  posX = 50, posY = 500; // default position for images
   
   // default values
-  threshold = 100;
-  channel = 1;
+  threshold = 80;
+  channel = 0;
   threshold_min = 100;
   threshold_max = 100;
   step = 1;
   preview = true;
-
+  show_render = true;
+  
   if_white = false;
   invert = false;
   eraseBlank = false;
   double_threshold = false;
+  
   limiting_steps = false;
-  uniqueInput = false;
+  uniqueInput = true;
   newRule = false;
   first_step_classical = false;
   eraseGliders_activated = false;
-  
-  actualImage = 2324;
+  switchActivated = false;
+  setupCanny = false;  
+  actualImage = 1;
   actualStep = 0;
-  nombreImages = 3324;
-  show_render = true;
+  nombreImages = 1440;
 
   cells = new int[8];
   livingCell_minValue = 1000;
 
-  dir_name =  "film/";
+  cannyParam1 = 20;
+  cannyParam2 = 6;
+
   file_name = "Export_version_02_";
-  input_dir = "input/"+dir_name;
-  nombre_zeros = 3;
-  format = ".jpg";
-
+  dir_name =  "arbre/";
+  file_name = "arbre__";
   main_dir = "input/";
-  filePath = "";
-
+  input_dir = main_dir+dir_name;
+  nombre_zeros = 3;
+  format = "jpg"; 
+  filePath = "test";
   input_file = "input/"+ dir_name + file_name + "0001";
-  output_dir = "output/" + dir_name + string(limiting_steps? "L":"noL") + string(eraseBlank? "eB-" : "lB") + string(newRule?"nR":"oR") + "-GTh" + to_string(threshold) + "-iW" + string(if_white?"1":"0") + "/" + file_name;
-  
+
   readImage();
+  
+  /* still todo: add a function to use a succession of different mode and parameters
+     here is a manual version:
+
+  ofDirectory dir;
+  dir.allowExt(format);
+  dir.open("input/"+dir_name);
+  dir.listDir();
+
+  for(int j = 0; j < dir.size()+1; j++) {
+    cout << "image : " << j << endl;
+    cout << "step 1" << endl;
+    filePath = dir_name+"arbre__"+to_string(j);
+    readImage();
+    
+    actualStep = 0;
+    step = 50;
+    
+    invert = false;
+    
+    for (k = 0; k < step; ++k) {
+      updateBoardNew();
+    }
+
+    actualStep = step; 
+    updateResult_Pxls();
+    saveImage();
+
+    cout << "Step 2" << endl;
+
+    for (i = 0; i < count; ++i) {
+      rlife_board[i] = !sum_board[i];
+    }
+
+    for (i = 0; i < count; ++i) {
+      sum_board[i] = !sum_board[i];
+    }
+    
+    step += 50;
+
+    for (k = 0; k < 50; ++k) {
+      updateBoardClassical();
+    }
+    
+    for (i = 0; i < count; ++i) {
+      if (sum_board[i]) {
+    	result_pxls[i * 3] = 0;
+    	result_pxls[i * 3 + 1] = 0;
+    	result_pxls[i * 3 + 2] = 0;
+      }
+    }
+
+    actualStep = step;
+    saveImage();
+    
+    cout << "Step 3" << endl;
+
+    for (i = 0; i < count; ++i) {
+      rlife_board[i] = !sum_board[i];
+    }
+    
+    step += 50;
+
+    for (k = 0; k < 50; ++k) {
+      updateBoardClassical();
+    }
+    
+    for (i = 0; i < count; ++i) {
+      if (sum_board[i]) {
+    	result_pxls[i * 3] = 0;
+    	result_pxls[i * 3 + 1] = 0;
+    	result_pxls[i * 3 + 2] = 0;
+      }
+    }
+
+    actualStep = step;
+    saveImage();
+
+    cout << "Step 4" << endl;
+
+    output_canny.getTexture().readToPixels(pxls);
+    // get Pxls from canny
+    for (i = 0; i < count; ++i) {
+      if( (pxls[channel+(i * 3)+1] > threshold) && (result_pxls[i*3]==255)){
+  	result_pxls[i * 3] = 80;
+  	result_pxls[i * 3 + 1] = 80;
+  	result_pxls[i * 3 + 2] = 80;
+      }
+    }
+    
+    actualStep = step+100;    
+    saveImage();
+    }*/
 }
 
 void CatalyseClass::updateFbo() {
   result.getTexture().loadData(result_pxls);
 }
 
+
 void CatalyseClass::update() {
-  //for (i = 0; i < step; ++i) {
   if (actualStep < step) {
     ++actualStep;
     if (newRule) {
@@ -62,17 +158,17 @@ void CatalyseClass::update() {
     else {
       updateBoardClassical();
     }
-    bild.setFromPixels(result_pxls);
   }
-  /*else {
-    readImage();
-    actualStep = 0;
-    }*/
+  if(setupCanny) {
+    Canny(input_canny,output_canny,cannyParam1*2,cannyParam2*2,3);
+    output_canny.update();
+  }
 }
 
 void CatalyseClass::printMultipleImages() {
+  int third_time = 0;
+  int tenth_time = 0;
   while (actualImage < nombreImages) {
-    //    int no_image = actualImage;
 
     string_nb_zeros = "";
     for (i = 0; i < nombre_zeros-log10((actualImage>0) ? actualImage : 1); ++i) {
@@ -84,7 +180,7 @@ void CatalyseClass::printMultipleImages() {
     max_value = limiting_steps ? step : actualImage;
     preview = false;
     
-    for (actualStep = 0; i < max_value; ++i) {
+    for (k = 0; k < max_value; ++k) {
       if (newRule) {
 	updateBoardNew();
       }
@@ -93,19 +189,11 @@ void CatalyseClass::printMultipleImages() {
       }
     }
     updateResult_Pxls();
-    switchImage();
+    //switchImage();
     saveImage();
     ++actualImage;
   }
   cout << "Done!" << endl; 
-  //std::exit(0);
-      // if (uniqueInput) {
-      // 	cout << i << " - ";
-      // 	output_file = output_dir + to_string(no_image) + "/" + to_string(actualImage) + string(".jpg");
-      // 	bild.setFromPixels(result_pxls);
-      // 	++actualImage;
-      // 	bild.save(output_file, OF_IMAGE_QUALITY_BEST);
-      // }
 }
 
 void CatalyseClass::saveImage() {
@@ -117,10 +205,19 @@ void CatalyseClass::saveImage() {
       i = tmp_name.length();
     }
   }
-  //output_dir = "output/" + name + string(limiting_steps? "L":"noL") + string(eraseBlank? "eB-" : "lB") + string(newRule?"nR":"oR") + "-GTh" + to_string(threshold) + "-iW" + string(if_white?"1":"0") + "/"+ to_string(actualImage);
-  //  output_file = output_dir + file_name + string(".jpg");
-  output_file = "output/film-GTh" +to_string(threshold) + "-nbStep" + to_string(actualStep) +"/" + to_string(actualImage) + string(".jpg");
-  bild.setFromPixels(finalPxls);//result_pxls);
+  if (uniqueInput) {
+    output_file = "output/" +filePath + "-" +to_string(actualStep) + string(".jpg");
+  }
+  else {
+     output_file = "output/" +filePath +to_string(threshold) + "-nbStep" + to_string(actualStep) +"/" + to_string(actualImage) + string(".jpg");
+     output_dir = "output/" + dir_name + string(limiting_steps? "L":"noL") + string(eraseBlank? "eB-" : "lB") + string(newRule?"nR":"oR") + "-GTh" + to_string(threshold) + "-iW" + string(if_white?"1":"0") + file_name;
+  }
+  if (switchActivated) {
+    bild.setFromPixels(finalPxls);
+  }
+  else {
+    bild.setFromPixels(result_pxls);
+  }
   bild.draw(0, 0);
   bild.save(output_file, OF_IMAGE_QUALITY_BEST);
 }
@@ -128,14 +225,16 @@ void CatalyseClass::saveImage() {
 void CatalyseClass::draw() {
   ofBackground(100, 100, 100);
   if (show_render){
-    finalFbo.draw(posX,posY);//,w/2,h/2);
-    startFbo.draw(w+posX*2,posY,w/2,h/2);
-    result.draw(w+posX*2,posY+h/2,w/2,h/2);
+    finalFbo.draw(posX,posY,w_draw,h_draw);//,w/2,h/2);
+    startFbo.draw(w_draw+posX*2,posY,w_draw/2,h_draw/2);
+    result.draw(w_draw+posX*2,posY+h_draw/2,w_draw/2,h_draw/2);
+    output_canny.draw(w_draw*1.5+posX*2,posY+h_draw/2,w_draw/2,h_draw/2);
   }
   else {
-    result.draw(posX,posY);//,w/2,h/2);
-    startFbo.draw(w+posX*2,posY,w/2,h/2);
-    finalFbo.draw(w+posX*2,posY+h/2,w/2,h/2);
+    result.draw(posX,posY,w_draw,h_draw);//,w/2,h/2);
+    startFbo.draw(w_draw+posX*2,posY,w_draw/2,h_draw/2);
+    finalFbo.draw(w_draw+posX*2,posY+h_draw/2,w_draw/2,h_draw/2);
+    output_canny.draw(w_draw*1.5+posX*2,posY+h_draw/2,w_draw/2,h_draw/2);
   }
 }
 
@@ -172,54 +271,69 @@ void CatalyseClass::switchImage() {
 	finalPxls[(i*3)+2] = b / numberNeighbours;
       }
     }
-    /*    else {
-      finalPxls[i*3] = startPxls[i*3];
-      finalPxls[(i*3)+1] = startPxls[(i*3)+1];
-      finalPxls[(i*3)+2] = startPxls[(i*3)+2];
-      }*/
   }
   finalFbo.getTexture().loadData(finalPxls);
 }
-//export_version_02_2324
-void CatalyseClass::readImage(){//}string filePath, bool hasParam, int zeros, string main_dir, string format) {
+
+void CatalyseClass::readImage(){
 
   if (filePath != "") {
-    //    format = ".png";
-    succ = bild.load(main_dir+filePath+format);
+    succ = bild.load(main_dir+filePath+"."+format);
     if (!succ) {
       filePath = ofToLower(filePath);
-      succ = bild.load(main_dir+filePath+format);
+      succ = bild.load(main_dir+filePath+"."+format);
     }
+    succ = input_canny.load(main_dir+filePath+"."+format);
   };
   if (filePath == "" || !succ){
-    //    format = ".jpg";
     string_nb_zeros = "";
     for (i = 0; i < nombre_zeros-log10((actualImage>0) ? actualImage : 1); ++i) {
       string_nb_zeros += "0";
     }
-       
-    succ = bild.load(input_dir + file_name + string_nb_zeros + to_string(actualImage) + format);
+
+    succ = bild.load(input_dir + file_name + string_nb_zeros + to_string(actualImage)+"."+format);
     if (!succ) {
       cerr << "Error when loading image...\n";
       std::exit(1);
     }
-  }
-  
-  w = bild.getWidth();
-  h = bild.getHeight();
-  if ((w < ofGetWidth()/3) && (h < ofGetHeight()/3)) {
-    w = w * 2;
-    h = h * 2;
-  }
-  else if ((w > ofGetWidth()) || (h > ofGetHeight())) {
-    w = w * 0.5;
-    h = h * 0.5;
+    succ = input_canny.load(input_dir + file_name + string_nb_zeros + to_string(actualImage)+"."+format);
   }
 
+  w = bild.getWidth();
+  h = bild.getHeight();
+
+  w_draw = w;
+  h_draw = h;
+  if ((w < ofGetWidth()/3) && (h < ofGetHeight()/3)) {
+    w_draw = w * 2;
+    h_draw = h * 2;
+  }
+  // else if (w >= ofGetWidth()) {
+  //   w_draw = w / ((ofGetWidth()/w)+2);
+  //   h_draw = h / ((ofGetWidth()/w)+2);
+  // }
+  // else if (h >= ofGetHeight()) {
+  //   w_draw = w / ((ofGetHeight()/h)+2);
+  //   h_draw = h / ((ofGetHeight()/h)+2);    
+  // }
+
+  // bool resize = true;
+  // if (resize) {
+  //   int new_size = 10;
+  //   h = h/new_size;
+  //   w = w/new_size;
+  // }
   count = h * w;
   bild.resize(w,h);
   startImage = bild;
-  
+
+  // Adding Canny image
+  input_canny.setImageType(OF_IMAGE_GRAYSCALE);
+  output_canny = input_canny;
+  Canny(input_canny,output_canny,cannyParam1*2,cannyParam2*2,3);
+  output_canny.update();
+  output_canny.setImageType(OF_IMAGE_COLOR);
+    
   delete[] rlife_board;
   delete[] sum_board;
   delete[] new_board;
@@ -231,7 +345,12 @@ void CatalyseClass::readImage(){//}string filePath, bool hasParam, int zeros, st
   result.clear();
   result.allocate(w, h, GL_RGB);
 
-  bild.getTexture().readToPixels(pxls);
+  if (setupCanny) {
+    output_canny.getTexture().readToPixels(pxls);
+  }
+  else {
+     bild.getTexture().readToPixels(pxls); 
+  }
   bild.getTexture().readToPixels(startPxls);
 
   result.begin();
@@ -253,12 +372,6 @@ void CatalyseClass::readImage(){//}string filePath, bool hasParam, int zeros, st
   ofClear(255, 0, 0);
   finalFbo.end();
 
-  finalFbo.getTexture().loadData(pxls);
-
-
-  livingCell_count = 0;
-
-  //    while (livingCell_count < livingCell_minValue) {
   livingCell_count = 0;
   if (double_threshold) {
     initStateFromImageBetweenTwoColors(pxls, if_white, threshold_min, threshold_max);
@@ -266,6 +379,8 @@ void CatalyseClass::readImage(){//}string filePath, bool hasParam, int zeros, st
   else {
     initStateFromImage(pxls, if_white, threshold);
   }
+
+  finalFbo.getTexture().loadData(pxls);
 
   // adding a first step with Classical rules
   // to do: adding a timeline:
@@ -276,29 +391,40 @@ void CatalyseClass::readImage(){//}string filePath, bool hasParam, int zeros, st
   for (i = 0; i < count; ++i) {
     if (rlife_board[i]) {
       livingCell_count++;
-      result_pxls[i * 3] = 255;
-      result_pxls[i * 3 + 1] = 255;
-      result_pxls[i * 3 + 2] = 255;
+      result_pxls[i * 3] = 255 - 255 * (invert ? 1 : 0);
+      result_pxls[i * 3 + 1] = 255 - 255 * (invert ? 1 : 0);
+      result_pxls[i * 3 + 2] = 255 - 255 * (invert ? 1 : 0);
     }
     else {
-      result_pxls[i * 3] = 0;
-      result_pxls[i * 3 + 1] = 0;
-      result_pxls[i * 3 + 2] = 0;
+      result_pxls[i * 3] = 0 + 255 * (invert ? 1 : 0);
+      result_pxls[i * 3 + 1] = 0 + 255 * (invert ? 1 : 0);
+      result_pxls[i * 3 + 2] = 0 + 255 * (invert ? 1 : 0);
     }
   }
-  //}
   result.getTexture().loadData(result_pxls);
 }
 
-void CatalyseClass::initStateFromImage(ofPixels pxls, bool val, int threshold) {
+void CatalyseClass::initStateFromImage(ofPixels basePxls, bool val, int threshold) {
   for (i = 0; i < count; ++i) {
-    if (pxls[channel+(i * 3)] < threshold){
+    if (basePxls[channel+(i * 3)+1] < threshold){
      rlife_board[i] = val;
      sum_board[i] = val;
     }
     else {
       rlife_board[i] = !val;
       sum_board[i] = !val;
+    }
+    new_board[i] = false;
+  }
+}
+
+void CatalyseClass::initStateFromBoard(bool* board, bool val) {
+  for (i = 0; i < count; i++) {
+    if (board) {
+      rlife_board[i] = val;
+    }
+    else {
+      rlife_board[i] = !val;
     }
     new_board[i] = false;
   }
@@ -348,9 +474,9 @@ void CatalyseClass::updateBoardClassical() {
 	result_pxls[i * 3 + 2] = 255 - 255 * (invert ? 1 : 0);
       }
       else if (eraseBlank) {
-	result_pxls[i * 3] = 255 * (invert ? 1 : 0);
-	result_pxls[i * 3 + 1] = 255 * (invert ? 1 : 0);
-	result_pxls[i * 3 + 2] = 255 * (invert ? 1 : 0);
+	result_pxls[i * 3] = 255 - 255 * (invert ? 0 : 1);
+	result_pxls[i * 3 + 1] = 255 - 255* (invert ? 0 : 1);
+	result_pxls[i * 3 + 2] = 255 - 255 * (invert ? 0 : 1);
       }
     }
     if (eraseGliders_activated){
@@ -464,5 +590,3 @@ void CatalyseClass::eraseGliders(int c) {
     }
   }
 }
-
-
